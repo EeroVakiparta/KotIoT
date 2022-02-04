@@ -1,9 +1,11 @@
 #include <esp_now.h>
 #include <esp_wifi.h>
+#include <WiFi.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include "conf.h"
 
-#define SENSOR_ID 1 /* To keep that of origin of the message*/
+ /* To keep that of origin of the message*/
 #define TEMPERATURESENSOR_PIN 4
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  60       /* Time ESP32 will go to sleep (in seconds) */
@@ -24,8 +26,8 @@ RTC_DATA_ATTR float oldTempC5 = 0;
 //MAC Address of the webserver ESP32
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-const char* ssid = "******";
-const char* password = "*******";
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASS;
 
 typedef struct struct_message {
   int id;
@@ -92,7 +94,7 @@ void setup() {
     // Set device as a Wi-Fi Station and set channel
     WiFi.mode(WIFI_STA);
 
-    int32_t channel = getWiFiChannel(WIFI_SSID);
+    int32_t channel = getWiFiChannel(ssid);
     WiFi.printDiag(Serial); // Uncomment to verify channel number before
     esp_wifi_set_promiscuous(true);
     esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
@@ -120,7 +122,7 @@ void setup() {
       return;
     }
 
-    tempValues.id = sensorID;
+    tempValues.id = SENSOR_ID;
     tempValues.temp1 = temperatureC1;
     tempValues.temp2 = temperatureC2;
     tempValues.temp3 = temperatureC3;

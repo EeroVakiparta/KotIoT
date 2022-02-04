@@ -3,10 +3,11 @@
 #include <WiFi.h>
 #include "ESPAsyncWebServer.h"
 #include <Arduino_JSON.h>
+#include "conf.h"
 
 // Replace with your network credentials (STATION)
-const char* ssid = "******";
-const char* password = "*******";
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASS;
 
 typedef struct struct_message {
   int id;
