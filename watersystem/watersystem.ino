@@ -8,7 +8,7 @@
  /* To keep that of origin of the message*/
 #define TEMPERATURESENSOR_PIN 4
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  60       /* Time ESP32 will go to sleep (in seconds) */
+#define TIME_TO_SLEEP 3600       /* Time ESP32 will go to sleep (in seconds) */
 
 // Setup a oneWire instance to communicate with any OneWire devices
 OneWire oneWire1(TEMPERATURESENSOR_PIN);
@@ -24,7 +24,7 @@ RTC_DATA_ATTR float oldTempC4 = 0;
 RTC_DATA_ATTR float oldTempC5 = 0;
 
 //MAC Address of the webserver ESP32
-uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+uint8_t broadcastAddress[] = {0xC8, 0xC9, 0xA3, 0xCA, 0xE7, 0xBC}; 
 
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
@@ -78,19 +78,19 @@ void setup() {
 
   sensors.begin();
   // does sensors need time to wake up before use?
-  delay(100);
+  delay(30);
   float temperatureC1 = readDSTemperatureC(0);
   float temperatureC2 = readDSTemperatureC(1);
   float temperatureC3 = readDSTemperatureC(2);
   float temperatureC4 = readDSTemperatureC(3);
   float temperatureC5 = readDSTemperatureC(4);
-  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  esp_sleep_enable_timer_wakeup(8ULL * TIME_TO_SLEEP * uS_TO_S_FACTOR);
 
-  if ( temperatureC1 != oldTempC1 ||
-       temperatureC2 != oldTempC2 ||
-       temperatureC3 != oldTempC3 ||
-       temperatureC4 != oldTempC4 ||
-       temperatureC5 != oldTempC5 ) {
+  if ( (int)temperatureC1 != (int)oldTempC1 ||
+       (int)temperatureC2 != (int)oldTempC2 ||
+       (int)temperatureC3 != (int)oldTempC3 ||
+       (int)temperatureC4 != (int)oldTempC4 ||
+       (int)temperatureC5 != (int)oldTempC5 ) {
     // Set device as a Wi-Fi Station and set channel
     WiFi.mode(WIFI_STA);
 
@@ -128,7 +128,7 @@ void setup() {
     tempValues.temp3 = temperatureC3;
     tempValues.temp4 = temperatureC4;
     tempValues.temp5 = temperatureC5;
-
+    
     //Send message via ESP-NOW
     esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &tempValues, sizeof(tempValues));
     if (result == ESP_OK) {
