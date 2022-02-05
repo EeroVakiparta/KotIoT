@@ -85,23 +85,23 @@ const char index_html[] PROGMEM = R"rawliteral(
   <div class="content">
     <div class="cards">
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 1</h4><p><span class="reading"><span id="t1-1"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 1</h4><p><span class="reading"><span id="t2010-1"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
       </div>
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 2</h4><p><span class="reading"><span id="t1-2"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 2</h4><p><span class="reading"><span id="t2010-2"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
       </div>
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 3</h4><p><span class="reading"><span id="t1-3"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 3</h4><p><span class="reading"><span id="t2010-3"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
       </div>
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 4</h4><p><span class="reading"><span id="t1-4"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 4</h4><p><span class="reading"><span id="t2010-4"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
       </div>
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 5</h4><p><span class="reading"><span id="t1-5"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 5</h4><p><span class="reading"><span id="t2010-5"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
       </div>
 
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #2 - TEMPERATURE</h4><p><span class="reading"><span id="t2-1"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt2"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> BOARD #2 - TEMPERATURE</h4><p><span class="reading"><span id="t2011-1"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt2"></span></p>
       </div>
 
     </div>
