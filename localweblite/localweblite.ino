@@ -22,6 +22,7 @@ typedef struct struct_message {
 struct_message incomingReadings;
 
 JSONVar board;
+JSONVar oldReadings;
 
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
@@ -45,6 +46,7 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) 
   board["readingId"] = String(incomingReadings.readingId);
 
   String jsonString = JSON.stringify(board);
+  oldReadings = board;
   events.send(jsonString.c_str(), "new_readings", millis());
 
   Serial.printf("Board ID %u: %u bytes\n", incomingReadings.id, len);
@@ -60,7 +62,7 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) 
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
-  <title>ESP-NOW TEST</title>
+  <title>Koti</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
   <link rel="icon" href="data:,">
@@ -80,28 +82,34 @@ const char index_html[] PROGMEM = R"rawliteral(
 </head>
 <body>
   <div class="topnav">
-    <h3>ESP-NOW TEST</h3>
+    <h3>Kotiautomaatiotesti</h3>
   </div>
   <div class="content">
     <div class="cards">
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 1</h4><p><span class="reading"><span id="t2010-1"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> KELLARI #1 - Mittari 1</h4><p><span class="reading"><span id="t2010-1"></span> &deg;C</span></p><p class="packet">Lukema ID: <span id="rt2010-1"></span></p>
       </div>
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 2</h4><p><span class="reading"><span id="t2010-2"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> KELLARI #1 - Mittari 2</h4><p><span class="reading"><span id="t2010-2"></span> &deg;C</span></p><p class="packet">Lukema ID: <span id="rt2010-2"></span></p>
       </div>
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 3</h4><p><span class="reading"><span id="t2010-3"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> KELLARI #1 - Lattia mittari 3</h4><p><span class="reading"><span id="t2010-3"></span> &deg;C</span></p><p class="packet">Lukema ID: <span id="rt2010-3"></span></p>
       </div>
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 4</h4><p><span class="reading"><span id="t2010-4"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> KELLARI #1 - Mittari 4</h4><p><span class="reading"><span id="t2010-4"></span> &deg;C</span></p><p class="packet">Lukema ID: <span id="rt2010-4"></span></p>
       </div>
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #1 - TEMPERATURE SENSOR 5</h4><p><span class="reading"><span id="t2010-5"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt1"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> KELLARI #1 - Mittari 5</h4><p><span class="reading"><span id="t2010-5"></span> &deg;C</span></p><p class="packet">Lukema ID: <span id="rt2010-5"></span></p>
       </div>
 
+
+
+
       <div class="card temperature">
-        <h4><i class="fas fa-thermometer-half"></i> BOARD #2 - TEMPERATURE</h4><p><span class="reading"><span id="t2011-1"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt2"></span></p>
+        <h4><i class="fas fa-thermometer-half"></i> KELLARI #2 - Suihku 1</h4><p><span class="reading"><span id="t2011-1"></span> &deg;C</span></p><p class="packet">Reading ID: <span id="rt2011-1"></span></p>
+      </div>
+      <div class="card humidity">
+        <h4><i class="fas fa-tint"></i> KELLARI #2 - Kosteus</h4><p><span class="reading"><span id="h2011-1"></span> &percnt;</span></p><p class="packet">Reading ID: <span id="rt2011-2"></span></p>
       </div>
 
     </div>
@@ -126,13 +134,28 @@ if (!!window.EventSource) {
  source.addEventListener('new_readings', function(e) {
   console.log("new_readings", e.data);
   var obj = JSON.parse(e.data);
-  document.getElementById("t"+obj.id+"-1").innerHTML = obj.temp1.toFixed(2);
-  document.getElementById("t"+obj.id+"-2").innerHTML = obj.temp2.toFixed(2);
-  document.getElementById("t"+obj.id+"-3").innerHTML = obj.temp3.toFixed(2);
-  document.getElementById("t"+obj.id+"-4").innerHTML = obj.temp4.toFixed(2);
-  document.getElementById("t"+obj.id+"-5").innerHTML = obj.temp5.toFixed(2);
-  document.getElementById("rt"+obj.id).innerHTML = obj.readingId;
-  document.getElementById("rh"+obj.id).innerHTML = obj.readingId;
+  if(obj.id == "2010"){
+    document.getElementById("t"+obj.id+"-1").innerHTML = obj.temp1.toFixed(2);
+    document.getElementById("t"+obj.id+"-2").innerHTML = obj.temp2.toFixed(2);
+    document.getElementById("t"+obj.id+"-3").innerHTML = obj.temp3.toFixed(2);
+    document.getElementById("t"+obj.id+"-4").innerHTML = obj.temp4.toFixed(2);
+    document.getElementById("t"+obj.id+"-5").innerHTML = obj.temp5.toFixed(2);
+    
+    document.getElementById("rt"+obj.id+"-1").innerHTML = obj.readingId;
+    document.getElementById("rt"+obj.id+"-2").innerHTML = obj.readingId;
+    document.getElementById("rt"+obj.id+"-3").innerHTML = obj.readingId;
+    document.getElementById("rt"+obj.id+"-4").innerHTML = obj.readingId;
+    document.getElementById("rt"+obj.id+"-5").innerHTML = obj.readingId;
+    }
+
+   if(obj.id == "2011"){
+    document.getElementById("t"+obj.id+"-1").innerHTML = obj.temp1.toFixed(2);
+   
+    document.getElementById("rt"+obj.id+"-1").innerHTML = obj.readingId;
+    document.getElementById("rt"+obj.id+"-2").innerHTML = obj.readingId;
+
+    document.getElementById("h"+obj.id+"-1").innerHTML = obj.temp2.toFixed(2);
+    }
  }, false);
 }
 </script>
@@ -178,6 +201,8 @@ void setup() {
     // send event with message "hello!", id current millis
     // and set reconnect delay to 1 second
     client->send("hello!", NULL, millis(), 10000);
+    String oldJsonString = JSON.stringify(oldReadings);
+    events.send(oldJsonString.c_str(), "new_readings", millis());
   });
   server.addHandler(&events);
   server.begin();
@@ -187,7 +212,8 @@ void loop() {
   static unsigned long lastEventTime = millis();
   static const unsigned long EVENT_INTERVAL_MS = 5000;
   if ((millis() - lastEventTime) > EVENT_INTERVAL_MS) {
-    events.send("ping", NULL, millis());
+    //events.send("ping", NULL, millis());
+
     lastEventTime = millis();
   }
 }
