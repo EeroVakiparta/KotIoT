@@ -1,7 +1,7 @@
 /*
   CO2 AND OTHER VOLATILE GASES
     The levels of CO2 in the air and potential health problems are:
-  
+
     400 ppm: average outdoor air level.
     400–1,000 ppm: typical level found in occupied spaces with good air exchange.
     1,000–2,000 ppm: level associated with complaints of drowsiness and poor air.
@@ -13,16 +13,16 @@
   TEMPERATURE AND HUMIDITY:
     Summer conditions: optimum temperature of 24.5°C with an acceptable range of 23-26°C
     Winter conditions: optimum temperature of 22°C with an acceptable range of 20-23.5°C
-      
+
     Humidity in relation to acceptable temperatures in office
-    Summer (Light clothing)  
+    Summer (Light clothing)
     If 30% then 24.5 - 28 °C
     If 60% then 23 - 25.5 °C
-    
-    Winter (Warm clothing) 
+
+    Winter (Warm clothing)
     If 30% then 20.5 - 25.5 °C
     If 60% then 20 - 24 °C
-  
+
     Optimum humidity levels are between 40% and 60%
     20 to 26 degrees people will become uncomfortable and productivity is likely to drop.
       Source: Canadian Centre of Occupational Health and Safety CSA Z412-17 Office Ergonomics
@@ -43,6 +43,7 @@ Adafruit_BMP280 bmp;
 const int movementSenosr = 2;
 bool isMotion = false;
 int motionCheckInterval = 1000;
+const int enableWorkingButtonPin = 4;
 
 void setup() {
   Serial.begin(9600);
@@ -78,6 +79,9 @@ void setup() {
   //-- Movement RCWL-0516 microwave radar sensor
   pinMode (movementSenosr, INPUT);
 
+  //-- Button to start and stop working
+  pinMode(enableWorkingButtonPin, INPUT);
+
   Serial.println("Setup finished.");
 }
 
@@ -85,12 +89,20 @@ void loop()
 {
   //SGP30 needs to warm up. It will display wrong values at start (400 ppm TVOC 0 ppb
   delay(2000);
+
+  int workingButtonState = digitalRead(PushButton);
+  if ( workingButtonState == HIGH ) {
+    Serial.println("WORKING");
+  } else {
+    Serial.println("SLACKING");
+  }
+
   int motion = digitalRead(movementSenosr);
-  if(motion == 1){
+  if (motion == 1) {
     Serial.println("Resource is moving. Sign of life.");
     isMotion = true;
-  }else{
-    Serial.println("Resource is motionless or slacking."); 
+  } else {
+    Serial.println("Resource is motionless or slacking.");
     isMotion = false;
   }
 
