@@ -4,6 +4,7 @@
 const char* ssid = "*******";
 const char* password = "*******";
 const char* mqtt_server = "192.168.100.11";
+const int measuringInterval = 10000; //millis, take into account the average-value-count-time
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -21,8 +22,8 @@ void setup() {
   client.setServer(mqtt_server, 1883);
 }
 
-int getCo2Measurement() {
-  int adcVal = analogRead(analogPin);
+int getCo2Measurement(int pin) {
+  int adcVal = getAverageCo2(pin, 10);
   float voltage = adcVal * (3.3 / 4095.0);
   if (voltage == 0) {
     return -1;
@@ -34,10 +35,19 @@ int getCo2Measurement() {
   }
 }
 
+int getAverageCo2(int sensorPin, int sampleCount) {
+  int co2values = 0;
+  for (int i = 0; i < sampleCount; i++) {
+    co2values = co2values + analogRead(sensorPin);
+    delay(200);
+  }
+  return co2values / sampleCount;
+}
+
 void loop() {
-  delay(10000);
-  
-  float co2measurement = getCo2Measurement();
+  delay(measuringInterval);
+
+  float co2measurement = getCo2Measurement(analogPin);
   if (isnan(co2measurement)) {
     co2measurement = -1;
     Serial.println("Check wiring.");

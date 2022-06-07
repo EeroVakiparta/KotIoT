@@ -1,4 +1,10 @@
 localweblite
-    2001 
+    requires senders boad ID
+
+    2001 C8:C9:A3:CA:E7:BC
+
+
 watersystem
+    requires recievers MAC Address
+
     2010   
