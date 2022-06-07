@@ -26,6 +26,10 @@
     Optimum humidity levels are between 40% and 60%
     20 to 26 degrees people will become uncomfortable and productivity is likely to drop.
       Source: Canadian Centre of Occupational Health and Safety CSA Z412-17 Office Ergonomics
+
+  MOVING DURING WORKDAY AND RESOURCE PRESENCE MONITORING
+    Needs better sources. No good info found online easily.
+    For now: move every 30min => good health and resource is actively working. => Better results and less sick leave.
 */
 
 #include "SparkFun_SGP30_Arduino_Library.h"
@@ -35,6 +39,10 @@
 
 SGP30 airquality;
 Adafruit_BMP280 bmp;
+
+const int movementSenosr = 2;
+bool isMotion = false;
+int motionCheckInterval = 1000;
 
 void setup() {
   Serial.begin(9600);
@@ -66,12 +74,25 @@ void setup() {
     while (1);
   }
   airquality.initAirQuality();
+
+  //-- Movement RCWL-0516 microwave radar sensor
+  pinMode (movementSenosr, INPUT);
+
+  Serial.println("Setup finished.");
 }
 
 void loop()
 {
   //SGP30 needs to warm up. It will display wrong values at start (400 ppm TVOC 0 ppb
   delay(2000);
+  int motion = digitalRead(movementSenosr);
+  if(motion == 1){
+    Serial.println("Resource is moving. Sign of life.");
+    isMotion = true;
+  }else{
+    Serial.println("Resource is motionless or slacking."); 
+    isMotion = false;
+  }
 
   airquality.measureAirQuality();
   Serial.print("CO2: ");
