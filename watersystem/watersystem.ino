@@ -9,6 +9,7 @@
 #define TEMPERATURESENSOR_PIN 4
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP 3600       /* Time ESP32 will go to sleep (in seconds) */
+#define SOL_INTERVAL 24
 
 // Setup a oneWire instance to communicate with any OneWire devices
 OneWire oneWire1(TEMPERATURESENSOR_PIN);
