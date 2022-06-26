@@ -43,7 +43,7 @@ Adafruit_BMP280 bmp;
 
 const int movementSenosr = 2;
 const int enableWorkingButtonPin = 4;
-const int hapticMotorPin = 13;
+const int hapticMotorPin = 12;
 
 bool isMoving = false;
 bool isWorking = false;
@@ -96,13 +96,13 @@ void setup() {
 void checkResourceButton(bool resourceIsWorking) {
   if (!resourceIsWorking) {
     if (digitalRead(enableWorkingButtonPin) == HIGH) {
-      Pulse(hapticMotorPin, 1);
+      ButtonFeedback(hapticMotorPin, 1);
       Serial.println("enableWorking");
       isWorking = true;
     }
   } else if (resourceIsWorking) {
     if (digitalRead(enableWorkingButtonPin) == LOW) {
-      Pulse(hapticMotorPin, 2);
+      ButtonFeedback(hapticMotorPin, 2);
       Serial.println("disableWorking");
       isWorking = false;
     }
