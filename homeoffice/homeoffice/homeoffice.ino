@@ -35,6 +35,8 @@
 #include "SparkFun_SGP30_Arduino_Library.h"
 #include <Wire.h>
 #include <SPI.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
 #include <Adafruit_BMP280.h>
 #include "kotiot_homeoffice.h" //If the library is in same folder, use quotes.
 
@@ -45,14 +47,38 @@ const int movementSenosr = 2;
 const int enableWorkingButtonPin = 4;
 const int hapticMotorPin = 12;
 
+const char* ssid = "xxxxxxx";
+const char* password = "xxxxxxxxxxxxxx";
+const char* mqtt_server = "192.1.1.1";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+long lastMsg = 0;
+char msg[50];
+int value = 0;
+
+// variable declarations
 bool isMoving = false;
 bool isWorking = false;
+float co2 = 0;
+float voc = 0;
+float temp = 0;
+float pressure = 0;
+float altitude = 0;
+
+float altitudeCalibrationValue = 1013.25;
 int motionCheckInterval = 1000;
 int ariqualityCheckInterval = 1000;
 
 void setup() {
   Serial.begin(9600);
   while ( !Serial ) delay(100);
+
+
+  //-- Setup Wifi and MQTT
+  setup_wifi();
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
 
   //-- BMP Temperature and humidity sensor setup
   Serial.println(F("BMP280 test"));
@@ -93,6 +119,69 @@ void setup() {
   Serial.println("Setup finished.");
 }
 
+void setup_wifi() {
+  delay(10);
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void callback(char* topic, byte* message, unsigned int length) {
+  Serial.print("Message arrived on topic: ");
+  Serial.print(topic);
+  Serial.print(". Message: ");
+  String messageTemp;
+  
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)message[i]);
+    messageTemp += (char)message[i];
+  }
+  Serial.println();
+
+  // Feel free to add more if statements to control more GPIOs with MQTT
+
+  // If a message is received on the topic esp32/output, you check if the message is either "on" or "off". 
+  // Changes the output state according to the message
+  if (String(topic) == "esp32/alarm") {
+    Serial.print("Changing alarm to ");
+    if(messageTemp == "on"){
+      Serial.println("on");
+      ClimbAndDown(hapticMotorPin, 3);
+    }
+    else if(messageTemp == "off"){
+      Serial.println("off");
+    }
+  }
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (client.connect("ESP8266Client")) {
+      Serial.println("connected");
+      // Subscribe
+      client.subscribe("esp32/output");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+
 void checkResourceButton(bool resourceIsWorking) {
   if (!resourceIsWorking) {
     if (digitalRead(enableWorkingButtonPin) == HIGH) {
@@ -120,25 +209,58 @@ void checkResourceMovement(bool resourceIsMoving) {
     Serial.println("Resource is motionless or slacking.");
     isMoving = false;
   }
+  char movementString[8];
+  dtostrf(isMoving, 1, 2, movementString);
+  client.publish("esp32/movement", movementString);
 }
 
 void measureAirQuality() {
   Serial.println("Measuring air quality...");
   airquality.measureAirQuality();
-  Serial.print("CO2: "); Serial.print(airquality.CO2); Serial.println(" ppm");
-  Serial.print("VOC: "); Serial.print(airquality.TVOC); Serial.println(" ppb");
+  co2 = airquality.CO2;
+  voc = airquality.TVOC;
+  Serial.print("CO2: "); Serial.print(co2); Serial.println(" ppm");
+  Serial.print("VOC: "); Serial.print(voc); Serial.println(" ppb");
+
+  char co2String[8];
+  dtostrf(co2, 1, 2, co2String);
+  client.publish("esp32/co2", co2String);
+  
+  char vocString[8];
+  dtostrf(voc, 1, 2, vocString);
+  client.publish("esp32/voc", vocString);
 }
 
 void measureAthmosphere() {
   Serial.println("Measuring atmosphere...");
-  Serial.print(F("Temperature = ")); Serial.print(bmp.readTemperature()); Serial.println(" *C");
-  Serial.print(F("Pressure = ")); Serial.print(bmp.readPressure()); Serial.println(" Pa");
-  Serial.print(F("Approx altitude = ")); Serial.print(bmp.readAltitude(1013.25));
+  temp = bmp.readTemperature();
+  pressure = bmp.readPressure();
+  altitude = bmp.readAltitude(altitudeCalibrationValue);
+  Serial.print(F("Temperature = ")); Serial.print(temp); Serial.println(" *C");
+  Serial.print(F("Pressure = ")); Serial.print(pressure); Serial.println(" Pa");
+  Serial.print(F("Approx altitude = ")); Serial.print(altitude);
   /* TODO: make ability to adjust this to local normal to get best altitude readings */
   Serial.println(" m");
+
+  //TODO: make a function
+  char tempString[8];
+  dtostrf(temp, 1, 2, tempString);
+  client.publish("esp32/temp", tempString);
+  
+  char pressureString[8];
+  dtostrf(pressure, 1, 2, pressureString);
+  client.publish("esp32/pressure", pressureString);
+  
+  char altString[8];
+  dtostrf(altitude, 1, 2, altString);
+  client.publish("esp32/altitude", altString);
 }
 
 void loop() {
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
   //SGP30 needs to warm up. It will display wrong values at start (400 ppm TVOC 0 ppb
   checkResourceButton(isWorking);
   checkResourceMovement(isMoving);
