@@ -42,11 +42,13 @@ SGP30 airquality;
 Adafruit_BMP280 bmp;
 
 const int movementSenosr = 2;
-bool isMotion = false;
-int motionCheckInterval = 1000;
-int ariqualityCheckInterval = 1000;
 const int enableWorkingButtonPin = 4;
 const int hapticMotorPin = 13;
+
+bool isMoving = false;
+bool isWorking = false;
+int motionCheckInterval = 1000;
+int ariqualityCheckInterval = 1000;
 
 void setup() {
   Serial.begin(9600);
@@ -88,116 +90,58 @@ void setup() {
   //-- Pin for haptic motor
   pinMode(hapticMotorPin, OUTPUT);
 
-  xTaskCreate(
-    task_haptic_motor, // Task function.
-    "task_haptic_motor", // Task name.
-    2048, // Stack size in words.
-    NULL, // Parameter passed as input of the task.
-    1, // Priority of the task.
-    NULL // Task handle.
-  );
-
-  xTaskCreate(
-    task_measure_airquality, // Task function.
-    "task_measure_airquality", // Task name.
-    2048, // Stack size in words.
-    NULL, // Parameter passed as input of the task.
-    1, // Priority of the task.
-    NULL // Task handle.
-  );
-
-  xTaskCreate(
-    task_measure_athmosphere, // Task function.
-    "task_measure_athmosphere", // Task name.
-    2048, // Stack size in words.
-    NULL, // Parameter passed as input of the task.
-    1, // Priority of the task.
-    NULL // Task handle.
-  );
-
   Serial.println("Setup finished.");
 }
 
-
-
-void task_haptic_motor( void *parameters ){
-  for ( ;; )
-  {
-    if(parameters.equals("Pulse")) {
-      Serial.println("Pulse");
+void checkResourceButton(bool resourceIsWorking) {
+  if (!resourceIsWorking) {
+    if (digitalRead(enableWorkingButtonPin) == HIGH) {
       Pulse(hapticMotorPin, 1);
-    } else if(parameters.equals("Climb")) {
-      Serial.println("Climb");
-      Climb(hapticMotorPin, 1);
-    } else if(parameters.equals("StopMotor")) {
-      Serial.println("StopMotor");
-      StopMotor(hapticMotorPin);
-    } else if(parameters.equals("ButtonFeedback")) {
-      Serial.println("ButtonFeedback");
-      ButtonFeedback(hapticMotorPin, 1);
-    } else{
-      Serial.println("EERROR: task_haptic_motor. No parameter");
+      Serial.println("enableWorking");
+      isWorking = true;
     }
-    vTaskDelete( NULL );
-  } 
-}
-
-void task_measure_airquality( void *parameters ){
-  for ( ;; )
-  {
-    airquality.measureAirQuality();
-    Serial.print("CO2: ");
-    Serial.print(airquality.CO2);
-    Serial.println(" ppm");
-    Serial.print("TVOC:  ");
-    Serial.print(airquality.TVOC);
-    Serial.println(" ppb");
-    vTaskDelay(ariqualityCheckInterval / portTICK_PERIOD_MS);
-  } 
-  vTaskDelete( NULL );
-}
-
-void task_measure_athmosphere( void *parameters ){
-  for ( ;; )
-  {
-  Serial.print(F("Temperature = "));
-  Serial.print(bmp.readTemperature());
-  Serial.println(" *C");
-
-  Serial.print(F("Pressure = "));
-  Serial.print(bmp.readPressure());
-  Serial.println(" Pa");
-
-  Serial.print(F("Approx altitude = "));
-  Serial.print(bmp.readAltitude(1013.25)); /* TODO: make ability to adjust this to local normal to get best altitude readings */
-  Serial.println(" m");
-
-  Serial.println();
-    vTaskDelay(ariqualityCheckInterval / portTICK_PERIOD_MS);
-  } 
-  vTaskDelete( NULL );
-}
-
-void loop()
-{
-  //SGP30 needs to warm up. It will display wrong values at start (400 ppm TVOC 0 ppb
-  
-
-  int workingButtonState = digitalRead(enableWorkingButtonPin);
-  if ( workingButtonState == HIGH ) {
-    Serial.println("WORKING");
-  } else {
-    Serial.println("SLACKING");
+  } else if (resourceIsWorking) {
+    if (digitalRead(enableWorkingButtonPin) == LOW) {
+      Pulse(hapticMotorPin, 2);
+      Serial.println("disableWorking");
+      isWorking = false;
+    }
   }
+}
 
-    int motion = digitalRead(movementSenosr);
-    if (motion == 1) {
-      Serial.println("Resource is moving. Sign of life.");
-      isMotion = true;
-    } else {
-      Serial.println("Resource is motionless or slacking.");
-      isMotion = false;
-    }
+//Movement sensor has built in delay.
+//TODO: find out the delay
+void checkResourceMovement(bool resourceIsMoving) {
+  int motion = digitalRead(movementSenosr);
+  if (motion == 1) {
+    Serial.println("Resource is moving. Sign of life.");
+    isMoving = true;
+  } else {
+    Serial.println("Resource is motionless or slacking.");
+    isMoving = false;
+  }
+}
 
+void measureAirQuality() {
+  Serial.println("Measuring air quality...");
+  airquality.measureAirQuality();
+  Serial.print("CO2: "); Serial.print(airquality.CO2); Serial.println(" ppm");
+  Serial.print("VOC: "); Serial.print(airquality.TVOC); Serial.println(" ppb");
+}
 
+void measureAthmosphere() {
+  Serial.println("Measuring atmosphere...");
+  Serial.print(F("Temperature = ")); Serial.print(bmp.readTemperature()); Serial.println(" *C");
+  Serial.print(F("Pressure = ")); Serial.print(bmp.readPressure()); Serial.println(" Pa");
+  Serial.print(F("Approx altitude = ")); Serial.print(bmp.readAltitude(1013.25));
+  /* TODO: make ability to adjust this to local normal to get best altitude readings */
+  Serial.println(" m");
+}
+
+void loop() {
+  //SGP30 needs to warm up. It will display wrong values at start (400 ppm TVOC 0 ppb
+  checkResourceButton(isWorking);
+  checkResourceMovement(isMoving);
+  measureAirQuality();
+  measureAthmosphere();
 }
