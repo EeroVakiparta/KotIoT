@@ -36,6 +36,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_BMP280.h>
+#include "kotiot_homeoffice.h" //If the library is in same folder, use quotes.
 
 SGP30 airquality;
 Adafruit_BMP280 bmp;
@@ -43,7 +44,9 @@ Adafruit_BMP280 bmp;
 const int movementSenosr = 2;
 bool isMotion = false;
 int motionCheckInterval = 1000;
+int ariqualityCheckInterval = 1000;
 const int enableWorkingButtonPin = 4;
+const int hapticMotorPin = 13;
 
 void setup() {
   Serial.begin(9600);
@@ -82,39 +85,81 @@ void setup() {
   //-- Button to start and stop working
   pinMode(enableWorkingButtonPin, INPUT);
 
+  //-- Pin for haptic motor
+  pinMode(hapticMotorPin, OUTPUT);
+
+  xTaskCreate(
+    task_haptic_motor, // Task function.
+    "task_haptic_motor", // Task name.
+    2048, // Stack size in words.
+    NULL, // Parameter passed as input of the task.
+    1, // Priority of the task.
+    NULL // Task handle.
+  );
+
+  xTaskCreate(
+    task_measure_airquality, // Task function.
+    "task_measure_airquality", // Task name.
+    2048, // Stack size in words.
+    NULL, // Parameter passed as input of the task.
+    1, // Priority of the task.
+    NULL // Task handle.
+  );
+
+  xTaskCreate(
+    task_measure_athmosphere, // Task function.
+    "task_measure_athmosphere", // Task name.
+    2048, // Stack size in words.
+    NULL, // Parameter passed as input of the task.
+    1, // Priority of the task.
+    NULL // Task handle.
+  );
+
   Serial.println("Setup finished.");
 }
 
-void loop()
-{
-  //SGP30 needs to warm up. It will display wrong values at start (400 ppm TVOC 0 ppb
-  delay(2000);
-
-  int workingButtonState = digitalRead(PushButton);
-  if ( workingButtonState == HIGH ) {
-    Serial.println("WORKING");
-  } else {
-    Serial.println("SLACKING");
-  }
-
-  int motion = digitalRead(movementSenosr);
-  if (motion == 1) {
-    Serial.println("Resource is moving. Sign of life.");
-    isMotion = true;
-  } else {
-    Serial.println("Resource is motionless or slacking.");
-    isMotion = false;
-  }
-
-  airquality.measureAirQuality();
-  Serial.print("CO2: ");
-  Serial.print(airquality.CO2);
-  Serial.println(" ppm");
-  Serial.print("TVOC:  ");
-  Serial.print(airquality.TVOC);
-  Serial.println(" ppb");
 
 
+void task_haptic_motor( void *parameters ){
+  for ( ;; )
+  {
+    if(parameters.equals("Pulse")) {
+      Serial.println("Pulse");
+      Pulse(hapticMotorPin, 1);
+    } else if(parameters.equals("Climb")) {
+      Serial.println("Climb");
+      Climb(hapticMotorPin, 1);
+    } else if(parameters.equals("StopMotor")) {
+      Serial.println("StopMotor");
+      StopMotor(hapticMotorPin);
+    } else if(parameters.equals("ButtonFeedback")) {
+      Serial.println("ButtonFeedback");
+      ButtonFeedback(hapticMotorPin, 1);
+    } else{
+      Serial.println("EERROR: task_haptic_motor. No parameter");
+    }
+    vTaskDelete( NULL );
+  } 
+}
+
+void task_measure_airquality( void *parameters ){
+  for ( ;; )
+  {
+    airquality.measureAirQuality();
+    Serial.print("CO2: ");
+    Serial.print(airquality.CO2);
+    Serial.println(" ppm");
+    Serial.print("TVOC:  ");
+    Serial.print(airquality.TVOC);
+    Serial.println(" ppb");
+    vTaskDelay(ariqualityCheckInterval / portTICK_PERIOD_MS);
+  } 
+  vTaskDelete( NULL );
+}
+
+void task_measure_athmosphere( void *parameters ){
+  for ( ;; )
+  {
   Serial.print(F("Temperature = "));
   Serial.print(bmp.readTemperature());
   Serial.println(" *C");
@@ -128,4 +173,31 @@ void loop()
   Serial.println(" m");
 
   Serial.println();
+    vTaskDelay(ariqualityCheckInterval / portTICK_PERIOD_MS);
+  } 
+  vTaskDelete( NULL );
+}
+
+void loop()
+{
+  //SGP30 needs to warm up. It will display wrong values at start (400 ppm TVOC 0 ppb
+  
+
+  int workingButtonState = digitalRead(enableWorkingButtonPin);
+  if ( workingButtonState == HIGH ) {
+    Serial.println("WORKING");
+  } else {
+    Serial.println("SLACKING");
+  }
+
+    int motion = digitalRead(movementSenosr);
+    if (motion == 1) {
+      Serial.println("Resource is moving. Sign of life.");
+      isMotion = true;
+    } else {
+      Serial.println("Resource is motionless or slacking.");
+      isMotion = false;
+    }
+
+
 }
