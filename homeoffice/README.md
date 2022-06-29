@@ -38,3 +38,7 @@ AHT20+BMP280 € 1,74
     - For reading from barometric pressure sensor.
 - kotiot_homeoffice
     - For cleaner code, storing trivial functions in separate library file.
+
+### TODO
+
+https://www.yr.no/en/forecast/daily-table/2-640999/Finland/Satakunta/Pori/Pori
