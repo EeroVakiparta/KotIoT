@@ -43,10 +43,6 @@
 #include <Adafruit_SSD1306.h>
 #include "time.h"
 
-const char* ntpServer = "pool.ntp.org";
-const long  gmtOffset_sec = 3600;
-const int   daylightOffset_sec = 3600;
-
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 #define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
@@ -70,7 +66,7 @@ long lastMsg = 0;
 char msg[50];
 int value = 0;
 
-// variable declarations
+// sensor variable declarations
 bool isMoving = false;
 bool isWorking = false;
 float co2 = 0;
@@ -82,6 +78,13 @@ float altitude = 0;
 float altitudeCalibrationValue = 1013.25;
 int motionCheckInterval = 1000;
 int ariqualityCheckInterval = 1000;
+
+// NTP server values
+const char* ntpServer = "pool.ntp.org";
+const long  gmtOffset_sec = 3600;
+const int   daylightOffset_sec = 3600;
+int GMTvalue = 3; //
+int daylightValue = 1;
 
 
 const unsigned char doggo_activity_bitmap_doggo_activity_ACTIVITY_0 [] PROGMEM = {
@@ -419,11 +422,6 @@ void setup() {
     for (;;); // Don't proceed, loop forever
   }
 
-  // Show initial display buffer contents on the screen --
-  // the library initializes this with an Adafruit splash screen.
-  display.display();
-  delay(2000); // Pause for 2 seconds
-
   // Clear the buffer
   display.clearDisplay();
 
@@ -468,7 +466,7 @@ void setup() {
   //-- Pin for haptic motor
   pinMode(hapticMotorPin, OUTPUT);
 
-  configTime(gmtOffset_sec * 3, daylightOffset_sec, ntpServer);
+  configTime(gmtOffset_sec * GMTvalue, daylightOffset_sec * daylightValue, ntpServer);
   printLocalTime();
 
   Serial.println("Setup finished.");
@@ -662,7 +660,7 @@ void loop() {
 
   showAnimation(doggo_sleep_bitmap_allArray, 4, 300, 4);
   cleanaScreenArea(1);
-  showAnimation(doggo_wifi_bitmap_allArray, 4, 300, 4);
+  
 
   client.loop();
   //SGP30 needs to warm up. It will display wrong values at start (400 ppm TVOC 0 ppb
